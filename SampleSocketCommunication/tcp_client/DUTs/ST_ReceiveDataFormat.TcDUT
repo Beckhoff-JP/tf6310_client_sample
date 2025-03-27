@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="ST_ReceiveDataFormat" Id="{3c613a2d-c25b-424a-b379-9347d15661a8}">
+    <Declaration><![CDATA[{attribute 'pack_mode' := '0'}
+TYPE ST_ReceiveDataFormat :
+STRUCT
+   command        : STRING(4);
+   seq_number    : ULINT;
+   value        : STRING(32);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

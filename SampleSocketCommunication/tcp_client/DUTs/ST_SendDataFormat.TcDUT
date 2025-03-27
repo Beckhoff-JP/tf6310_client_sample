@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="ST_SendDataFormat" Id="{b2b978fd-5fac-4296-82d7-b6e80f84d857}">
+    <Declaration><![CDATA[{attribute 'pack_mode' := '0'}
+TYPE ST_SendDataFormat :
+STRUCT
+   command        : STRING(4);
+   seq_number    : ULINT;
+   value        : ULINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

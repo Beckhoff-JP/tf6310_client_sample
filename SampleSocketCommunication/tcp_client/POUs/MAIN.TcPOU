@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <POU Name="MAIN" Id="{1aa7e757-70c7-48e9-8613-66e0012cc569}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	fb_connect	: FB_SocketConnect;
+	fb_close	: FB_SocketClose;
+	fb_send		: FB_SocketSend;
+	fb_receive	: FB_SocketReceive;
+	nConnectionState		: UDINT;
+	nSequenceState			: UDINT;
+	bConnect	: BOOL; // サーバへの接続
+	bStart		: BOOL; // サーバへのコマンド送信とデータ受信待ちシーケンス開始
+	server_addr	: ST_SockAddr := (nPort := 9998, sAddr := '127.0.0.1'); 
+	connection_handle		: T_HSOCKET;	// 接続したソケットの識別子を通じてSend/Receiveする。
+	send_data	: ST_SendDataFormat;
+	receive_data : ST_ReceiveDataFormat;
+	data_receive_timeout	: TON;
+	rand : DRAND;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// 接続状態の状態マシン
+CASE nConnectionState OF
+	0:
+		// bConnectをTRUEにすると接続開始
+		IF bConnect THEN
+			// ハンドルが残っていれば再オープンせずに再利用。
+			CASE connection_handle.handle OF
+				0:
+					nConnectionState := 1;
+				ELSE
+					nConnectionState := 3;
+			END_CASE
+		END_IF
+	1: 
+		// ソケットオープン処理
+		IF NOT fb_connect.bBusy THEN
+			fb_connect(
+				sRemoteHost := server_addr.sAddr,
+				nRemotePort := server_addr.nPort,
+				bExecute := TRUE
+			);
+		END_IF
+		IF fb_connect.bBusy THEN
+			fb_connect(bExecute := FALSE);
+			nConnectionState := 2;
+		END_IF
+	2: 
+		fb_connect();
+		IF fb_connect.bError THEN
+			nConnectionState := 9;
+		ELSE
+			// 接続ハンドルを保持
+			IF fb_connect.hSocket.handle > 0 THEN
+				connection_handle := fb_connect.hSocket;
+				nConnectionState := 3;
+			END_IF
+		END_IF
+	3:
+		// bConnectをFALSEにすると切断処理
+		IF nSequenceState = 0 AND NOT bConnect THEN
+			fb_close(
+				hSocket := connection_handle,
+				bExecute := TRUE
+			);
+			IF fb_close.bBusy THEN
+				fb_close(bExecute := FALSE);
+				nConnectionState := 4;
+			END_IF
+		END_IF
+	4:
+		fb_close();
+		IF fb_close.bError THEN
+			nConnectionState := 9;
+		ELSIF NOT fb_close.bBusy THEN
+			connection_handle.handle := 0;
+			nConnectionState := 0;
+		END_IF
+	9:
+		// 接続エラー
+		bConnect := FALSE;
+		nConnectionState := 0;
+END_CASE
+
+// データ要求、応答のシーケンス状態マシン
+CASE nSequenceState	OF
+	0:
+		// 接続ハンドルが有効でbStartをTRUEにするとシーケンス開始
+		data_receive_timeout(IN := FALSE);
+		IF connection_handle.handle <> 0 AND bStart THEN
+			nSequenceState := 1;
+		END_IF
+	1:
+		// 送信データのセット
+		rand();
+		send_data.command := 'SCOM';
+		send_data.seq_number := send_data.seq_number + 1;
+		send_data.value := LREAL_TO_ULINT(rand.Num * 100000);
+
+		// 送信処理
+		fb_send(
+			hSocket := connection_handle,
+			cbLen := SIZEOF(send_data), 
+			pSrc := ADR(send_data), 
+			bExecute := TRUE
+		);
+		IF fb_send.bBusy THEN
+			receive_data.command := '';
+			nSequenceState := 2;
+		END_IF
+	2:
+		// 受信処理
+		fb_send(bExecute := FALSE);
+		IF fb_send.bError THEN
+			nSequenceState := 9;
+		ELSIF NOT fb_send.bBusy THEN
+			// 送信が受け付けられたので、受診処理に移る
+			// 受信データはST_ReceiveDataFormat構造体の変数に格納。
+			fb_receive(
+				hSocket := connection_handle,
+				cbLen := SIZEOF(receive_data), 
+				pDest := ADR(receive_data),
+				tTimeout := T#10S,
+				bExecute := TRUE
+			);
+			IF fb_receive.bBusy THEN
+				nSequenceState := 3;
+			END_IF
+
+		END_IF
+	3:
+		// 受信データ待ち
+		fb_receive(bExecute := FALSE);
+		IF fb_receive.bError THEN
+			nSequenceState := 9;
+		ELSIF NOT fb_receive.bBusy THEN
+			// 受信処理が受け付けられたので、受信待ち。10秒のタイムアウトでエラー。強制切断
+			data_receive_timeout(IN:=TRUE, PT:=T#10S);
+			IF data_receive_timeout.Q THEN
+				data_receive_timeout(IN := FALSE);
+				nSequenceState := 9;
+			END_IF
+			// 期待するデータがとどいたら初期状態に戻す。
+			IF LEN(receive_data.command) > 0 THEN
+				bStart := FALSE;
+				nSequenceState := 0;		
+			END_IF
+		END_IF
+	9:
+		// シーケンスエラー
+		bStart := FALSE;
+		bConnect := FALSE;
+		nSequenceState := 0;
+		
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="505" Count="0" />
+      <LineId Id="504" Count="0" />
+      <LineId Id="386" Count="1" />
+      <LineId Id="517" Count="0" />
+      <LineId Id="388" Count="0" />
+      <LineId Id="513" Count="0" />
+      <LineId Id="389" Count="7" />
+      <LineId Id="514" Count="0" />
+      <LineId Id="397" Count="15" />
+      <LineId Id="515" Count="0" />
+      <LineId Id="413" Count="5" />
+      <LineId Id="516" Count="0" />
+      <LineId Id="419" Count="18" />
+      <LineId Id="518" Count="0" />
+      <LineId Id="438" Count="2" />
+      <LineId Id="506" Count="1" />
+      <LineId Id="442" Count="1" />
+      <LineId Id="520" Count="0" />
+      <LineId Id="444" Count="9" />
+      <LineId Id="508" Count="0" />
+      <LineId Id="454" Count="11" />
+      <LineId Id="521" Count="0" />
+      <LineId Id="466" Count="3" />
+      <LineId Id="510" Count="0" />
+      <LineId Id="512" Count="0" />
+      <LineId Id="470" Count="12" />
+      <LineId Id="522" Count="0" />
+      <LineId Id="483" Count="3" />
+      <LineId Id="511" Count="0" />
+      <LineId Id="487" Count="4" />
+      <LineId Id="523" Count="0" />
+      <LineId Id="492" Count="5" />
+      <LineId Id="519" Count="0" />
+      <LineId Id="498" Count="3" />
+      <LineId Id="231" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
