@@ -18,22 +18,59 @@
     <LibraryReferences>{d9ad482a-3063-41f5-bb8b-c990e854d54a}</LibraryReferences>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DUTs\ST_ReceiveDataFormat.TcDUT">
+    <Compile Include="GVLs\SockParam.TcGVL">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\ST_SendDataFormat.TcDUT">
-      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\libSocketClient\E_SocketCommStateMachine.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\FB_SocketClientController.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\FB_MessageQueue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\ITF_Receiver.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\ITF_Sender.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\ITF_TaskObserver.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\ST_CommunicationMetaData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\libSocketClient\ST_CommandContainer.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\protocols\FB_SocketClientProtocolBase.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\protocols\TestProtocol\FB_TestProtocol.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\protocols\TestProtocol\ST_ReceiveDataFormat.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\protocols\TestProtocol\ST_SendDataFormat.TcDUT">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
     <Folder Include="GVLs" />
+    <Folder Include="POUs\libSocketClient" />
+    <Folder Include="POUs\protocols" />
+    <Folder Include="POUs\protocols\TestProtocol" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />
   </ItemGroup>
@@ -62,19 +99,19 @@
   <ProjectExtensions>
     <PlcProjectOptions>
       <XmlArchive>
-  <Data>
-    <o xml:space="preserve" t="OptionKey">
+        <Data>
+          <o xml:space="preserve" t="OptionKey">
       <v n="Name">"&lt;ProjectRoot&gt;"</v>
       <d n="SubKeys" t="Hashtable" />
       <d n="Values" t="Hashtable" />
     </o>
-  </Data>
-  <TypeList>
-    <Type n="Hashtable">System.Collections.Hashtable</Type>
-    <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
-    <Type n="String">System.String</Type>
-  </TypeList>
-</XmlArchive>
+        </Data>
+        <TypeList>
+          <Type n="Hashtable">System.Collections.Hashtable</Type>
+          <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+          <Type n="String">System.String</Type>
+        </TypeList>
+      </XmlArchive>
     </PlcProjectOptions>
   </ProjectExtensions>
 </Project>

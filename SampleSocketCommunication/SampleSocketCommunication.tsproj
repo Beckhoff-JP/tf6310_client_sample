@@ -2,9 +2,7 @@
 <TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.65">
 	<Project ProjectGUID="{F3C43CB5-312D-43A5-A0C1-27D671BDC5B9}" Target64Bit="true" ShowHideConfigurations="#x6">
 		<System>
-			<Settings MaxCpus="12" NonWinCpus="3">
-				<Cpu CpuId="11"/>
-			</Settings>
+			<Settings MaxCpus="12" NonWinCpus="3"/>
 			<Licenses>
 				<Target>
 					<ManualSelect>{3EBB9639-5FF3-42B6-8847-35C70DC013C8}</ManualSelect>
@@ -18,7 +16,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{46122FC8-3B07-402C-ACF1-1EA1EE908A8B}" Name="tcp_client" PrjFilePath="tcp_client\tcp_client.plcproj" TmcFilePath="tcp_client\tcp_client.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="tcp_client\tcp_client.tmc" TmcHash="{C791D787-620A-E751-F4C7-DF4775FA8F2B}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="tcp_client\tcp_client.tmc" TmcHash="{5C9F1931-7B1B-4ADB-AA53-F1AC8B8DF1C0}">
 					<Name>tcp_client Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Contexts>

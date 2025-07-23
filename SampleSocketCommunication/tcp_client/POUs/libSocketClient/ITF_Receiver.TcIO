@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <Itf Name="ITF_Receiver" Id="{128973b7-40f2-4810-a45e-5d7cb8c99a3f}">
+    <Declaration><![CDATA[INTERFACE ITF_Receiver EXTENDS __System.IQueryInterface 
+]]></Declaration>
+    <Method Name="flush" Id="{74ab21e6-d44b-4e43-8ab5-0213057c280a}">
+      <Declaration><![CDATA[METHOD flush : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="Parse" Id="{58faed4d-4787-4aea-a1d8-5f4146bd7808}">
+      <Declaration><![CDATA[METHOD Parse : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="received" Id="{114c9ed4-9cd8-4d0f-96ef-f0dd65cba216}">
+      <Declaration><![CDATA[PROPERTY received : BOOL]]></Declaration>
+      <Get Name="Get" Id="{d7f3ab06-d17c-4d0c-8428-d71c88069bad}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="ResetBufferPointer" Id="{38f40fe8-e3b7-4202-b784-5566e03f2db6}">
+      <Declaration><![CDATA[METHOD ResetBufferPointer : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="SetReceivedData" Id="{296805c3-8e67-4403-b7e7-36f4b85dff67}">
+      <Declaration><![CDATA[METHOD SetReceivedData : BOOL
+VAR_INPUT
+	pData	: PVOID;
+	cbLen	: UDINT;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

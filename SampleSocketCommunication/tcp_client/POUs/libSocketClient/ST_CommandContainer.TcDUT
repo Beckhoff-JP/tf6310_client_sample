@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="ST_CommandContainer" Id="{ab35e74d-4401-4c19-83ca-87b3519732e0}">
+    <Declaration><![CDATA[TYPE ST_CommandContainer :
+STRUCT
+	sender : ITF_Sender;
+	receiver : ITF_receiver;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

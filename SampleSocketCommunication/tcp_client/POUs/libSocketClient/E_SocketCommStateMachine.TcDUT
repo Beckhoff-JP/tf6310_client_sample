@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="E_SocketCommStateMachine" Id="{ff8be66f-7eb3-4abe-8dd9-2aa92215f18a}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_SocketCommStateMachine :
+(
+	init := 0,
+	connect,
+	idle,
+	send,
+	receive,
+	disconnect,
+	done
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

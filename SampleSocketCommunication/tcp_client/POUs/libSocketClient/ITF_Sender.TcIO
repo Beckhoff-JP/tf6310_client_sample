@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <Itf Name="ITF_Sender" Id="{f4a66d46-a96f-4600-9bdf-2da59ac2218f}">
+    <Declaration><![CDATA[INTERFACE ITF_Sender EXTENDS __System.IQueryInterface 
+]]></Declaration>
+    <Property Name="SendData" Id="{c66ebad0-9ef6-41b4-aa9b-204d70c67f9e}">
+      <Declaration><![CDATA[PROPERTY SendData : ST_CommunicationMetaData]]></Declaration>
+      <Get Name="Get" Id="{67c79e9a-daf0-46d3-b7eb-e2a36a9cec8b}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

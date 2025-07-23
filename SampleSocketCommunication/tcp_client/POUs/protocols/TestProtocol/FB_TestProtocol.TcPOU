@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <POU Name="FB_TestProtocol" Id="{3c9ec079-52dc-40d5-bd05-b4062fa89375}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_TestProtocol EXTENDS FB_SocketClientProtocolBase
+VAR_INPUT
+	send_data : ST_SendDataFormat;
+END_VAR
+VAR_OUTPUT
+	receive_data : ST_ReceiveDataFormat;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Parse" Id="{8af2c580-c5e8-41a8-b779-bea6e4de146a}">
+      <Declaration><![CDATA[METHOD Parse : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF SIZEOF(receive_data) = MEMCPY(ADR(receive_data), ADR(SUPER^.receive_data_buffer), SIZEOF(receive_data)) THEN
+	Parse := TRUE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="received" Id="{f489726b-1376-41d8-900b-f60a890949fb}">
+      <Declaration><![CDATA[PROPERTY received : BOOL]]></Declaration>
+      <Get Name="Get" Id="{9fe03456-0e59-422c-8b47-08bdac5bf07d}">
+        <Declaration><![CDATA[VAR
+	specified_size : UDINT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[specified_size := SIZEOF(receive_data);
+received := SUPER^.receive_data_size = specified_size;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SendData" Id="{eed17491-b3ea-4268-ac9f-17a42bb3947b}">
+      <Declaration><![CDATA[PROPERTY SendData : ST_CommunicationMetaData]]></Declaration>
+      <Get Name="Get" Id="{7533733c-c3ea-4d4b-a6a5-f7c286120254}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SendData.cbLen := SIZEOF(send_data);
+SendData.pData := ADR(send_data);]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_TestProtocol">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TestProtocol.Parse">
+      <LineId Id="8" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TestProtocol.received.Get">
+      <LineId Id="8" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TestProtocol.SendData.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

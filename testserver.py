@@ -1,5 +1,6 @@
 import asyncio
 from struct import pack, unpack
+from datetime import datetime
 
 class DummyMeasurementMachineProtocol(asyncio.Protocol):
 
@@ -16,7 +17,6 @@ class DummyMeasurementMachineProtocol(asyncio.Protocol):
         print('Disconnected with {}'.format(peername))
         if e is not None:
             raise(e)
-
 
     def data_received(self, data):
         """
@@ -40,10 +40,11 @@ class DummyMeasurementMachineProtocol(asyncio.Protocol):
          'Q'   : sender_sequenceをセット
          '32s'   : 32文字をセット
         """
-        send_data = pack('<5sQ32s', b'RCOM\x00', sender_sequence, f"Server count value is : {self.counter}".encode() + b'\x00')
+        send_data = pack('<5sQ10241s', b'RCOM\x00', sender_sequence, f"Server count value is : {self.counter}, time : {datetime.now().isoformat()}".encode() + b'\x00')
         # 組み立てた電文をPLCに送り返す。
         self.transport.write(send_data)
         # シーケンス番号を繰り上げる。
+        print(f"send data size: {len(send_data)}")
         if self.counter <= 99999:
             self.counter += 1;
         else:

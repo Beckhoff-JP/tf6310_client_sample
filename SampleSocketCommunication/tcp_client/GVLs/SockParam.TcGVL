@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <GVL Name="SockParam" Id="{8d902b1f-ce1b-406a-9f3f-a9016b6642e9}" ParameterList="True">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+	MAX_MESSAGE_SIZE : UDINT := 2048;	// 受信処理バッファ最大サイズ
+	RECEIVE_BUFFER_SIZE	: UDINT := 20480; // 受信メッセージの組立先のバッファサイズ
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

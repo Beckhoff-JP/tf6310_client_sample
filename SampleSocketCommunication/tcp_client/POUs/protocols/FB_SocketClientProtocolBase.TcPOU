@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <POU Name="FB_SocketClientProtocolBase" Id="{1b2e36d7-8731-4229-95ec-0d652ed34ac3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK ABSTRACT FB_SocketClientProtocolBase IMPLEMENTS ITF_Sender, ITF_Receiver, ITF_TaskObserver
+VAR CONSTANT
+	MAX_NUM_OF_REQUEST_SECTIONS : UINT := 16;
+END_VAR
+VAR_OUTPUT
+	//ParsedStructVariable : ST_********;
+END_VAR
+VAR	
+	expected_receive_size_min : UDINT := 1; 
+	expected_receive_size_max : UDINT := 1024; 
+	receive_data_buffer	: ARRAY [0..SockParam.RECEIVE_BUFFER_SIZE - 1] OF BYTE;
+	receive_data_size	: UDINT;
+	_activity : E_SocketCommStateMachine;
+	_error		: BOOL;
+	_complete	: BOOL;
+	_error_id	: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="activity" Id="{5eee7c8d-c622-4ce6-823e-0a838f30ade5}">
+      <Declaration><![CDATA[PROPERTY activity : E_SocketCommStateMachine]]></Declaration>
+      <Get Name="Get" Id="{5a8d4ddf-820e-438d-8326-517c7e019e81}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[activity := _activity;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{e92feaa8-6bd4-4e83-bcfa-939341ead5b5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_activity := activity;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="complete" Id="{a27c6fb6-e622-4c68-af01-8a75d7780637}">
+      <Declaration><![CDATA[PROPERTY complete : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{8b633819-0457-42e8-a2ec-fd608f7747f6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[complete := _complete;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9f693f51-9004-45e9-bb9c-b4890e95492b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_complete := complete;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="error" Id="{92d0ae49-9144-44ff-8c92-735c21281f97}">
+      <Declaration><![CDATA[PROPERTY error : BOOL]]></Declaration>
+      <Get Name="Get" Id="{44d154ad-1b56-4555-99d7-d9b146a2c846}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[error := _error;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{2c7488b0-e454-45c0-9194-ce1073647b22}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_error := error;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="error_id" Id="{bda79044-12bf-44d5-b2c2-35ea295ecca5}">
+      <Declaration><![CDATA[PROPERTY error_id : UDINT]]></Declaration>
+      <Get Name="Get" Id="{85a16ff4-6489-4cd4-9a73-1633e481339f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[error_id := _error_id;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{e412de78-af9f-4abc-b102-e643be6b3c26}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_error_id := error_id;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="FB_init" Id="{2686539f-e6f2-46dc-ba96-8d8ce5e924b4}">
+      <Declaration><![CDATA[METHOD FB_init : BOOL
+VAR_INPUT
+	bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+	bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.flush();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="flush" Id="{32e9cafa-d2bd-4d49-8cca-43d9d18e24dd}">
+      <Declaration><![CDATA[METHOD flush : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[receive_data_size := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Parse" Id="{51e92697-3dac-43a7-b5a6-7cc2f7b795c7}">
+      <Declaration><![CDATA[METHOD Parse : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="received" Id="{d4ed8aa5-6747-4c0e-a84c-629f818b1e65}">
+      <Declaration><![CDATA[PROPERTY received : BOOL]]></Declaration>
+      <Get Name="Get" Id="{72a821ce-507e-4552-a979-712f89814f2d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="ResetBufferPointer" Id="{43f4783a-dca3-4598-a234-4efab461b66a}">
+      <Declaration><![CDATA[METHOD ResetBufferPointer : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[receive_data_size := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SendData" Id="{73c6a3c3-c930-4d59-8447-749f809e3833}">
+      <Declaration><![CDATA[PROPERTY SendData : ST_CommunicationMetaData]]></Declaration>
+      <Get Name="Get" Id="{23191c6c-8da4-4aaf-b3ed-6d62c86b7e90}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="SetReceivedData" Id="{74462546-f5fa-4e47-adfa-6e8c6c6cc925}">
+      <Declaration><![CDATA[METHOD SetReceivedData : BOOL
+VAR_INPUT
+	pData	: PVOID;
+	cbLen	: UDINT;
+END_VAR
+VAR
+	i : UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF pData = 0 OR cbLen = 0 THEN
+	RETURN;
+END_IF
+
+MEMCPY(ADR(receive_data_buffer) + receive_data_size, pData, cbLen);
+receive_data_size := receive_data_size + cbLen;
+SetReceivedData := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_SocketClientProtocolBase">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.activity.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.activity.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.complete.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.complete.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.error.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.error.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.error_id.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.error_id.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.FB_init">
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.flush">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.Parse">
+      <LineId Id="4" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.received.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.ResetBufferPointer">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.SendData.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientProtocolBase.SetReceivedData">
+      <LineId Id="10" Count="3" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="15" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

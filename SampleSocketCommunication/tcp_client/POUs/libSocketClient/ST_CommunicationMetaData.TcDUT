@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="ST_CommunicationMetaData" Id="{fdcf7125-81a2-4c5f-88ad-e865feb496c5}">
+    <Declaration><![CDATA[TYPE ST_CommunicationMetaData :
+STRUCT
+	cbLen	: UDINT;
+	pData	: PVOID;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

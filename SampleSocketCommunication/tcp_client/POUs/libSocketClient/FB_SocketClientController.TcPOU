@@ -1,0 +1,310 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <POU Name="FB_SocketClientController" Id="{0b0263bf-854b-4ba6-bbd2-d3072addaa32}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SocketClientController
+VAR_INPUT
+	bConnect        : BOOL;
+END_VAR
+
+VAR_OUTPUT
+	bError			: BOOL;
+	bBusy			: BOOL;
+	nErrStep		: E_SocketCommStateMachine;
+	nErrId			: UDINT;	
+END_VAR
+
+VAR
+	receive_data_buffer : ARRAY[0..SockParam.MAX_MESSAGE_SIZE - 1] OF BYTE;
+	
+	_command_queue	: FB_MessageQueue;
+	_command : REFERENCE TO ST_CommandContainer;
+	
+	// Tcp
+	fbConnect		: FB_SocketConnect;
+	fbClose			: FB_SocketClose;
+	_sRemoteHost	: T_IPv4Addr;
+	fbSend			: FB_SocketSend;
+	fbReceive		: FB_SocketReceive;
+	nState			:	E_SocketCommStateMachine;
+	_sock_handle	: T_HSocket;
+	bExecuteSend	: BOOL;
+	eConnState		: E_SocketConnectionState;
+	_nPort			: UDINT;
+	_receiver		: ITF_Receiver;
+	_sender			: ITF_Sender;
+	_observer		: ITF_TaskObserver;
+	send_data 		: ST_CommunicationMetaData;	
+	_length_of_receive_data		: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE nState OF
+E_SocketCommStateMachine.init: 
+	IF bConnect THEN
+		initComms();
+		bError := FALSE;
+		nErrId	:= 0;
+		nState := E_SocketCommStateMachine.connect;
+	END_IF
+E_SocketCommStateMachine.connect:
+	fbConnect(													// Open connection to server
+			sSrvNetId:= '', 
+			sRemoteHost:= _sRemoteHost, 
+			nRemotePort:= _nPort, 
+			bExecute:= TRUE, 
+			tTimeout:= T#4S, 
+			bBusy=> , 
+			bError=> bError, 
+			hSocket=> _sock_handle);
+
+	IF _sock_handle.handle <> 0 AND NOT (fbConnect.bBusy) THEN			// Handle is created
+		fbConnect(bExecute := FALSE);
+		nState := E_SocketCommStateMachine.idle;
+	ELSIF fbConnect.bError THEN
+		bError := fbConnect.bError;
+		nErrId := fbConnect.nErrId;
+		nErrStep := nState;
+		nState := E_SocketCommStateMachine.done;
+	END_IF
+E_SocketCommStateMachine.idle: // Wait command ready event
+
+	// コマンドキューデータが有れば取り出して _command 参照変数にコマンド構造体をセット。
+	// コマンド構造体はITF_Sender, ITF_Receiverのインターフェースを格納。
+	// タイムアウト等でサーバ側から切断された場合、fbSend()でエラーになり、Step0に戻る。
+	// この後再接続してコマンドを再実行した場合、キューから取り出さずそのままコマンド実行する。
+	// _cmmandはシーケンスが正常終了した際に無効な参照値を書き込むため、
+	// この場合に限りキューからコマンドを取り出す条件としている。
+	IF NOT __ISVALIDREF(_command) AND _command_queue.usage > 0 THEN
+		_command REF= _command_queue.get(); // キューから取り出したコマンドをセットする。
+	END_IF
+	
+	IF __ISVALIDREF(_command) THEN
+		_sender := _command.sender;
+		_receiver := _command.receiver;
+		IF NOT __QUERYINTERFACE(_receiver, _observer) THEN
+			IF NOT __QUERYINTERFACE(_sender, _observer) THEN
+				_observer := 0;
+			END_IF
+		END_IF
+		IF _observer <> 0 THEN
+			_observer.complete := FALSE;
+		END_IF
+		_receiver.flush();
+		fbSend(bExecute := FALSE);
+		send_data := _sender.SendData;
+		_receiver.ResetBufferPointer();
+		bBusy := TRUE;
+		nState := E_SocketCommStateMachine.send;
+	END_IF
+	
+E_SocketCommStateMachine.send: // Send command
+	fbSend(
+		sSrvNetId:= '', 
+		hSocket:= _sock_handle, 
+		cbLen:= send_data.cbLen, 
+		pSrc:= send_data.pData, 
+		bExecute:= TRUE,
+		tTimeout:= T#100MS, 
+		bBusy=> bBusy);
+	
+	IF NOT fbSend.bBusy THEN									// Check cyclically for new data
+			nState := E_SocketCommStateMachine.receive;
+	END_IF
+		
+	//ReceiveMessage();
+	IF fbSend.bError THEN							// Close connection in case of error or manual communication stop
+		bError := fbSend.bError;
+		nErrId := fbSend.nErrId;
+		nErrStep := nState;
+		nState := E_SocketCommStateMachine.disconnect;
+	END_IF
+
+E_SocketCommStateMachine.receive: //Receive
+	fbSend(bExecute := FALSE);
+	
+	fbReceive(													// ReceiveData
+		sSrvNetId:= '', 
+		hSocket:= _sock_handle, 
+		cbLen:= SIZEOF(receive_data_buffer), 
+		pDest:=  ADR(receive_data_buffer), 
+		bExecute:= true, 
+		tTimeout:= T#100MS, 
+		bBusy=> bBusy, 
+		nRecBytes=> _length_of_receive_data);
+	IF NOT fbReceive.bBusy THEN									// Check cyclically for new data
+		fbReceive(bExecute := FALSE);
+		IF fbReceive.bError THEN							// Close connection in case of error or manual communication stop
+			bError := fbReceive.bError;
+			nErrId := fbReceive.nErrId;
+			nErrStep := nState;
+			nState := E_SocketCommStateMachine.disconnect;
+		ELSE
+			_receiver.SetReceivedData(
+				pData := ADR(receive_data_buffer),
+				cbLen := _length_of_receive_data
+			);
+			IF _receiver.received THEN
+				_receiver.Parse();
+				bBusy := FALSE;
+				_command REF= 0;	// 正常終了したらコマンド参照変数に無効値を書き込む
+				_sender := 0;
+				_receiver := 0;
+				IF _observer <> 0 THEN
+					_observer.complete := TRUE;
+					_observer := 0;
+				END_IF
+				nState := E_SocketCommStateMachine.idle;
+			END_IF
+		END_IF
+	END_IF
+E_SocketCommStateMachine.disconnect://Disconnecting
+	fbClose(														// Close connection
+			sSrvNetId:= '', 
+			hSocket:= _sock_handle, 
+			bExecute:= TRUE, 
+			tTimeout:= T#4S, 
+			);
+			
+	IF fbClose.bError THEN
+		bError := fbClose.bError;
+		nErrId := fbClose.nErrId;
+		nErrStep := nState;
+	END_IF
+
+	IF NOT fbClose.bBusy THEN
+		_sock_handle.handle := 0;
+		nState := E_SocketCommStateMachine.init;
+		bConnect := FALSE;
+	END_IF
+E_SocketCommStateMachine.done:
+	bConnect := FALSE;
+	nState := E_SocketCommStateMachine.init;
+END_CASE
+
+IF nState > E_SocketCommStateMachine.connect AND nState <> E_SocketCommStateMachine.done AND NOT bConnect THEN
+	nState := E_SocketCommStateMachine.disconnect;
+END_IF
+
+IF _observer <> 0 THEN
+	_observer.error := bError;
+	_observer.error_id := nErrId;
+	IF bError THEN
+		_observer.activity := nErrStep;
+	ELSE
+		_observer.activity := nState;
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+    <Method Name="connect" Id="{6df9e1ee-a6c0-4dab-90c9-5ec660e73473}">
+      <Declaration><![CDATA[METHOD connect : Tc2_TcpIp.T_HSOCKET
+VAR_INPUT
+	sIPAddr	: T_IPv4Addr := '127.0.0.1';
+	nPort	: UDINT := 8888;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^._sRemoteHost  := sIPAddr;
+THIS^._nPort := nPort;
+bConnect := TRUE;
+IF nState >= E_SocketCommStateMachine.idle THEN
+	connect := _sock_handle;
+ELSE
+	connect.handle := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="disconnect" Id="{d6ac08c9-fb97-4ecb-9c82-0dc992fac48c}">
+      <Declaration><![CDATA[METHOD disconnect : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bConnect := FALSE;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="hSocketHandle" Id="{d9c07ab8-77f6-458f-bf1e-4834c6457dfc}">
+      <Declaration><![CDATA[PROPERTY hSocketHandle : T_HSocket]]></Declaration>
+      <Get Name="Get" Id="{a5b8d5fc-377f-48e6-8538-1c6b62e0cc73}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[hSocketHandle := _sock_handle;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{4bfad0d0-c71d-4f77-8607-fefd437d9bf0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_sock_handle := hSocketHandle;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="initComms" Id="{c8e55144-13cb-4aaa-b280-a0c4d0ac568f}">
+      <Declaration><![CDATA[METHOD PRIVATE initComms : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbConnect(bExecute := FALSE); 
+fbClose(bExecute := FALSE);
+fbSend(bExecute := FALSE); 
+fbReceive(bExecute := FALSE);
+_command REF= 0;
+_sender := 0;
+_receiver := 0;
+_observer := 0;
+bBusy := FALSE;
+bError := FALSE;
+nErrId := 0;
+initComms := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="queue" Id="{83bf788b-2250-4c96-8ef2-12170cc86ca1}">
+      <Declaration><![CDATA[PROPERTY queue : REFERENCE TO FB_MessageQueue]]></Declaration>
+      <Get Name="Get" Id="{0481f10b-5ed6-4f0e-832a-069316909ec7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[queue REF= _command_queue;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_SocketClientController">
+      <LineId Id="827" Count="154" />
+      <LineId Id="734" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.connect">
+      <LineId Id="8" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="10" Count="2" />
+      <LineId Id="14" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.disconnect">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.hSocketHandle.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.hSocketHandle.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.initComms">
+      <LineId Id="16" Count="1" />
+      <LineId Id="2" Count="1" />
+      <LineId Id="18" Count="3" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="8" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_SocketClientController.queue.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
