@@ -104,8 +104,8 @@ ELSE
 |ITF_TaskObserver|インターフェース|通信の進捗状態、エラーの観察ロジックを定義するインターフェース|
 |ST_CommandContainer|構造体|ITF_SenderとITF_Receiverをパックした構造体。`FB_MessageQueue` キュー配列の要素型として用いる。|
 |ST_CommunicationMetaData|構造体|送受信に用いるバイトデータブロックのポインタ `pData: PVOID` とサイズ指定 `cbLen : UDINT` をパックしたもの。`T_Arg` 型の重複であるが、これによりTc2_Utilityライブラりの追加を必要としない。|
-|E_SocketCommStateMachine|列挙体||
-|FB_MessageQueue|ファンクションブロック||
+|E_SocketCommStateMachine|列挙体|`FB_SocketClientController` 内の通信制御の状態マシンを定義します。|
+|FB_MessageQueue|ファンクションブロック|通信コマンドを非同期で処理するためのFIFOキューです。これによりコマンド通信処理中でも別のコマンドを受け付けることができます。|
 |FB_SocketClientController|ファンクションブロック|1. ソケット接続、2. ITF_Senderを用いたデータ送信、3. ITF_Receiverを用いたデータ受信、4. ソケット切断 の通信手順を実行するファンクションブロック。|
 
 #### プロトコル定義
@@ -122,9 +122,10 @@ ELSE
 上記の`FB_TestProtocol`のとおり、プロトコル特有のメソッドやプロパティを実装する必要が有るのは、次の通りです。
 
 |リソース名|タイプ|引数|戻り値|説明|
+|---|---|---|---|---|
 |Parse|メソッド|なし|BOOL|親クラスで定義されている `SUPER^.receive_data_buffer` にはTF6310の受信バッファから取り出したデータが蓄積されています。このデータを受信データ構造体 `ST_ReceiveDataFormat` のインスタンス変数にメモリコピーします。|
-|received|プロパティ(Get)|----|BOOL|受信バッファのデータを蓄積し、組立終わった際にTRUEを返します。`SUPER^.receive_data_size` には受信バッファから取り出して `SUPER^.receive_data_buffer` に蓄積済みのサイズが格納されています。このサイズが規定量 `SIZEOF(<ST_SendDataFormatの変数>)` に達したかどうかを定義するのが良いでしょう。|
-|SendData|メソッド|----|ST_CommunicationMetaData|送信データ構造体 `ST_SendDataFormat` のインスタンス変数のサイズとポインタを返します。このデータをサーバへ送信します。|
+|received|プロパティ(Get)|"---"|BOOL|受信バッファのデータを蓄積し、組立終わった際にTRUEを返します。`SUPER^.receive_data_size` には受信バッファから取り出して `SUPER^.receive_data_buffer` に蓄積済みのサイズが格納されています。このサイズが規定量 `SIZEOF(<ST_SendDataFormatの変数>)` に達したかどうかを定義するのが良いでしょう。|
+|SendData|メソッド|"---"|ST_CommunicationMetaData|送信データ構造体 `ST_SendDataFormat` のインスタンス変数のサイズとポインタを返します。このデータをサーバへ送信します。|
 
 上記以外は親クラスの定義済みのメソッド、プロパティのままで再定義の必要はありません。
 
